@@ -37,6 +37,7 @@ from src.api.deliveries import router as deliveries_router  # noqa: E402
 from src.api.history import router as history_router  # noqa: E402
 from src.api.notifications import router as notifications_router  # noqa: E402
 from src.api.realtime import router as realtime_router, get_ws_usage_help  # noqa: E402
+from src.api.seed import run_startup_seed  # noqa: E402
 
 def _init_db() -> None:
     """Create database tables based on SQLAlchemy models.
@@ -50,7 +51,7 @@ def _init_db() -> None:
 
 @app.on_event("startup")
 def on_startup() -> None:
-    """Application startup hook to initialize the database.
+    """Application startup hook to initialize the database and perform seeding.
 
     Notes:
         - If DATABASE_URL is empty or malformed, get_engine() will raise a RuntimeError.
@@ -58,6 +59,16 @@ def on_startup() -> None:
     """
     try:
         _init_db()
+        # Open a short-lived session for seeding to keep things simple and isolated
+        from sqlalchemy.orm import Session
+        from src.api.db import get_engine as _get_engine, sessionmaker as _sessionmaker  # type: ignore
+
+        # Create a temporary sessionmaker bound to the existing engine (no globals mutated)
+        engine = _get_engine()
+        LocalSession = _sessionmaker(bind=engine, autoflush=False, autocommit=False)  # type: ignore
+        with LocalSession() as db:  # type: ignore
+            assert isinstance(db, Session)
+            run_startup_seed(db)
     except RuntimeError as exc:
         # Provide a concise log-friendly error; let process exit gracefully
         # by re-raising for the server to handle.

@@ -14,6 +14,13 @@ Base = declarative_base()
 _engine: Optional[Engine] = None
 _SessionLocal: Optional[sessionmaker] = None
 
+# PUBLIC_INTERFACE
+def get_sessionmaker() -> sessionmaker:
+    """Return the configured global sessionmaker, initializing engine if needed."""
+    _ensure_engine_initialized()
+    assert _SessionLocal is not None
+    return _SessionLocal
+
 
 def _ensure_engine_initialized() -> None:
     """Create the global SQLAlchemy engine and session factory if not initialized.
