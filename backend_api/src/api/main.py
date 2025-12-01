@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.config import settings
 from src.api.db import Base, engine
+# Import models so SQLAlchemy metadata is populated before create_all
+from src.api import models as _models  # noqa: F401
 
 app = FastAPI(
     title="Delivery Tracker API",
@@ -22,10 +24,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database metadata (placeholder for now)
+# Initialize database metadata (now with models imported)
 def init_db() -> None:
-    """Create database tables based on SQLAlchemy models (placeholder)."""
-    # In future steps, model modules should be imported before create_all so metadata is populated.
+    """Create database tables based on SQLAlchemy models.
+
+    This imports the ORM models module to ensure Base.metadata is populated,
+    then creates tables on the configured database engine.
+    """
     Base.metadata.create_all(bind=engine)
 
 
@@ -38,6 +43,6 @@ def health_check():
     """Health check endpoint.
 
     Returns:
-        JSON payload indicating service status.
+        dict: JSON payload indicating service status.
     """
     return {"message": "Healthy"}
