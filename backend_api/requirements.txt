@@ -43,3 +43,5 @@ watchfiles==1.0.5
 websockets==15.0.1
 SQLAlchemy==2.0.36
 psycopg2-binary==2.9.10
+python-jose==3.3.0
+passlib[bcrypt]==1.7.4

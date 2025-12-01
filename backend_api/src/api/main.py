@@ -11,6 +11,7 @@ app = FastAPI(
     version="0.1.0",
     openapi_tags=[
         {"name": "Health", "description": "Service health and readiness endpoints"},
+        {"name": "Auth", "description": "Authentication and user identity endpoints"},
     ],
 )
 
@@ -27,7 +28,7 @@ app.add_middleware(
 # db.get_engine() defers actual engine creation until called at runtime.
 from src.api.db import Base, get_engine  # noqa: E402
 from src.api import models as _models  # noqa: F401, E402
-
+from src.api.auth import router as auth_router  # noqa: E402
 
 def _init_db() -> None:
     """Create database tables based on SQLAlchemy models.
@@ -55,6 +56,8 @@ def on_startup() -> None:
         # In production you might integrate a structured logger here.
         raise RuntimeError(f"Startup failed: {exc}") from exc
 
+# Register routers
+app.include_router(auth_router)
 
 @app.get("/", tags=["Health"], summary="Health Check")
 def health_check():
