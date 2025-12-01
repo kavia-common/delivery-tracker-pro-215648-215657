@@ -9,7 +9,8 @@ from src.api.config import settings
 # SQLAlchemy base for models to inherit
 Base = declarative_base()
 
-# Lazily created engine and sessionmaker to avoid crashing at import time
+# Lazily created engine and sessionmaker to avoid crashing at import time.
+# Do NOT create the engine at import time; defer until get_engine() is called.
 _engine: Optional[Engine] = None
 _SessionLocal: Optional[sessionmaker] = None
 
@@ -31,6 +32,7 @@ def _ensure_engine_initialized() -> None:
             "Provide a valid SQLAlchemy URL via environment or .env."
         )
 
+    # pool_pre_ping helps avoid stale connections; no connection is made until first use.
     _engine = create_engine(db_url, pool_pre_ping=True)
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 
@@ -44,6 +46,9 @@ def get_engine() -> Engine:
 
     Raises:
         RuntimeError: If DATABASE_URL is missing or malformed.
+
+    Notes:
+        This function defers engine creation until first call and is safe to import.
     """
     _ensure_engine_initialized()
     assert _engine is not None  # for type checkers
@@ -56,8 +61,12 @@ def get_db() -> Generator[Session, None, None]:
 
     Yields:
         Session: SQLAlchemy session bound to the configured engine.
+
     Ensures:
         Session is closed after request is handled.
+
+    Raises:
+        RuntimeError: If DATABASE_URL is missing or malformed (via get_engine()).
     """
     _ensure_engine_initialized()
     assert _SessionLocal is not None

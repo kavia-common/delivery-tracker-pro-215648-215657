@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Load settings early to ensure .env is processed before any DB work
+# Load settings early to ensure .env is processed before any DB work.
+# Settings.load() is side-effect free for DB and only reads environment.
 from src.api.config import settings
 
 app = FastAPI(
@@ -22,7 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import after app is created to avoid import-time DB initialization
+# Import after app is created to avoid import-time DB initialization.
+# db.get_engine() defers actual engine creation until called at runtime.
 from src.api.db import Base, get_engine  # noqa: E402
 from src.api import models as _models  # noqa: F401, E402
 
@@ -39,7 +41,12 @@ def _init_db() -> None:
 
 @app.on_event("startup")
 def on_startup() -> None:
-    """Application startup hook to initialize the database."""
+    """Application startup hook to initialize the database.
+
+    Notes:
+        - If DATABASE_URL is empty or malformed, get_engine() will raise a RuntimeError.
+        - Ensure a valid .env or environment variables are set before starting the app.
+    """
     try:
         _init_db()
     except RuntimeError as exc:
