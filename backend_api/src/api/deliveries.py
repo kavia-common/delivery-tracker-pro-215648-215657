@@ -17,6 +17,9 @@ from src.api.models import (
     DeliveryLocation,
     DeliveryStatus,
     DeliveryStatusEvent,
+    NotificationEvent,
+    NotificationType,
+    NotificationChannel,
 )
 from src.api.schemas import (
     DeliveryCreate,
@@ -177,6 +180,20 @@ def create_delivery(
         actor_user_id=int(current_user["id"]),
     )
     db.add(ev)
+    # Create notification event for owner about creation/status
+    note_msg = f"Delivery {d.tracking_code} created with status '{d.status.value}'."
+    notif = NotificationEvent(
+        user_id=d.user_id,
+        delivery_id=d.id,
+        type=NotificationType.STATUS_UPDATE,
+        channel=NotificationChannel.PUSH,  # logical channel; actual sending layer may vary
+        title="Delivery created",
+        message=note_msg,
+        sent_success=True,
+        error=None,
+    )
+    db.add(notif)
+
     db.commit()
     db.refresh(d)
 
@@ -258,6 +275,19 @@ def update_delivery(
             actor_user_id=int(current_user["id"]),
         )
         db.add(ev)
+        # Add notification event for status change
+        msg = f"Delivery {d.tracking_code} status changed to '{d.status.value}'."
+        notif = NotificationEvent(
+            user_id=d.user_id,
+            delivery_id=d.id,
+            type=NotificationType.STATUS_UPDATE,
+            channel=NotificationChannel.PUSH,
+            title="Status updated",
+            message=msg,
+            sent_success=True,
+            error=None,
+        )
+        db.add(notif)
 
     db.commit()
     db.refresh(d)
@@ -327,6 +357,20 @@ def append_status(
     d.status = payload.status
 
     db.add(ev)
+    # Create notification for owner about new status
+    message = f"Delivery {d.tracking_code} status updated to '{payload.status.value}'."
+    notif = NotificationEvent(
+        user_id=d.user_id,
+        delivery_id=d.id,
+        type=NotificationType.STATUS_UPDATE,
+        channel=NotificationChannel.PUSH,
+        title="Delivery status update",
+        message=message,
+        sent_success=True,
+        error=None,
+    )
+    db.add(notif)
+
     db.commit()
     db.refresh(ev)
 

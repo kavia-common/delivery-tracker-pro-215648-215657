@@ -14,6 +14,7 @@ app = FastAPI(
         {"name": "Auth", "description": "Authentication and user identity endpoints"},
         {"name": "Deliveries", "description": "CRUD, status, and location tracking for deliveries"},
         {"name": "History", "description": "Historical queries for deliveries and status events with filters"},
+        {"name": "Notifications", "description": "Notification listing and read acknowledgements"},
     ],
 )
 
@@ -33,6 +34,7 @@ from src.api import models as _models  # noqa: F401, E402
 from src.api.auth import router as auth_router  # noqa: E402
 from src.api.deliveries import router as deliveries_router  # noqa: E402
 from src.api.history import router as history_router  # noqa: E402
+from src.api.notifications import router as notifications_router  # noqa: E402
 
 def _init_db() -> None:
     """Create database tables based on SQLAlchemy models.
@@ -64,6 +66,7 @@ def on_startup() -> None:
 app.include_router(auth_router)
 app.include_router(deliveries_router)
 app.include_router(history_router)
+app.include_router(notifications_router)
 
 @app.get("/", tags=["Health"], summary="Health Check")
 def health_check():
