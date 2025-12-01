@@ -15,6 +15,7 @@ app = FastAPI(
         {"name": "Deliveries", "description": "CRUD, status, and location tracking for deliveries"},
         {"name": "History", "description": "Historical queries for deliveries and status events with filters"},
         {"name": "Notifications", "description": "Notification listing and read acknowledgements"},
+        {"name": "Realtime", "description": "WebSocket endpoints for realtime updates and notifications"},
     ],
 )
 
@@ -35,6 +36,7 @@ from src.api.auth import router as auth_router  # noqa: E402
 from src.api.deliveries import router as deliveries_router  # noqa: E402
 from src.api.history import router as history_router  # noqa: E402
 from src.api.notifications import router as notifications_router  # noqa: E402
+from src.api.realtime import router as realtime_router, get_ws_usage_help  # noqa: E402
 
 def _init_db() -> None:
     """Create database tables based on SQLAlchemy models.
@@ -67,6 +69,7 @@ app.include_router(auth_router)
 app.include_router(deliveries_router)
 app.include_router(history_router)
 app.include_router(notifications_router)
+app.include_router(realtime_router)
 
 @app.get("/", tags=["Health"], summary="Health Check")
 def health_check():
@@ -76,3 +79,13 @@ def health_check():
         dict: JSON payload indicating service status.
     """
     return {"message": "Healthy"}
+
+@app.get(
+    "/realtime",
+    tags=["Realtime"],
+    summary="WebSocket usage help",
+    description="Describe how to connect to the WebSocket endpoints for realtime features.",
+)
+def realtime_help() -> dict:
+    """Return information on connecting to WebSocket endpoints and expected messages."""
+    return get_ws_usage_help()
