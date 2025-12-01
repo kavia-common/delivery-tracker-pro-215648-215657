@@ -12,6 +12,7 @@ app = FastAPI(
     openapi_tags=[
         {"name": "Health", "description": "Service health and readiness endpoints"},
         {"name": "Auth", "description": "Authentication and user identity endpoints"},
+        {"name": "Deliveries", "description": "CRUD, status, and location tracking for deliveries"},
     ],
 )
 
@@ -29,6 +30,7 @@ app.add_middleware(
 from src.api.db import Base, get_engine  # noqa: E402
 from src.api import models as _models  # noqa: F401, E402
 from src.api.auth import router as auth_router  # noqa: E402
+from src.api.deliveries import router as deliveries_router  # noqa: E402
 
 def _init_db() -> None:
     """Create database tables based on SQLAlchemy models.
@@ -58,6 +60,7 @@ def on_startup() -> None:
 
 # Register routers
 app.include_router(auth_router)
+app.include_router(deliveries_router)
 
 @app.get("/", tags=["Health"], summary="Health Check")
 def health_check():
